@@ -1,3 +1,7 @@
+if (typeof Query === "undefined") {
+    window.Query = true; 
+}
+
 // 全局作弊状态机
 const AppState = {
   isProtectionEnabled: false, // 防封/过检测是否生效

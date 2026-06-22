@@ -95,6 +95,9 @@ function executeDetection(config) {
 /**
  * 核心鉴权与反破解阻断函数
  */
+/**
+ * 核心鉴权与反破解阻断函数（已解除域名分发限制）
+ */
 function JIANCE() {
   // 单次执行包装器（确保核心校验只跑一次，防止多重挂载导致卡死）
   const initCall = (function () {
@@ -122,75 +125,11 @@ function JIANCE() {
       globalContext = window;
     }
     
-    // 【💡 字符串解密还原 1】：动态剔除垃圾字符
-    // 干扰串："1z3fLpix4.grj17l5.SE84S.52iRoqNegWeMgSEMTKmXsXavgQGm"
-    // 过滤后还原出合法的 API 服务器 IP -> "134.175.84.52"
-    const regexFilter = new RegExp("[zfLpixgrjlSESiRoqNegWeMgSEMTKmXsXavgQGm]", "g");
-    const allowedHosts = "1z3fLpix4.grj17l5.SE84S.52iRoqNegWeMgSEMTKmXsXavgQGm".replace(regexFilter, "").split(";");
-    
-    // 字符串特征码匹配算法（通过字符长度及特定位置的 charCode 比对）
-    const stringComparer = function (str, length, charMap) {
-      if (str.length != length) return false;
-      for (let i = 0; i < length; i++) {
-        for (let j = 0; j < charMap.length; j += 2) {
-          if (i == charMap[j] && str.charCodeAt(i) != charMap[j + 1]) {
-            return false;
-          }
-        }
-      }
-      return true;
-    };
-    
-    let locationKey, hostKey, hrefKey, assignKey;
-    
-    // 通过特异性字符反射寻找 "location" 键名
-    for (let key in globalContext) {
-      if (stringComparer(key, 8, [7, 116, 5, 101, 3, 117, 0, 100])) { // "location"
-        locationKey = key;
-        break;
-      }
-    }
-    // 通过特异性字符反射寻找 "host" 键名
-    for (let key in globalContext[locationKey]) {
-      if (stringComparer(key, 4, [5, 110, 0, 100])) { // "host"
-        hostKey = key;
-        break;
-      }
-    }
-    // 通过特异性字符反射寻找 "href" 键名
-    for (let key in globalContext[locationKey]) {
-      if (stringComparer(key, 4, [7, 110, 0, 108])) { // "href"
-        hrefKey = key;
-        break;
-      }
-    }
-    
-    if (!locationKey || !globalContext[locationKey]) return;
-    
-    const currentHost = globalContext[locationKey][hostKey];
-    let isDomainValid = false;
-    
-    // 验证当前悬浮窗的运行域名是否属于合法的官方服务器
-    for (let i = 0; i < allowedHosts.length; i++) {
-      const host = allowedHosts[i];
-      const pureHost = host[0] === "." ? host.slice(1) : host;
-      if (currentHost && currentHost.indexOf(pureHost) !== -1) {
-        if (currentHost.length == host.length || host.indexOf(".") === 0) {
-          isDomainValid = true;
-        }
-      }
-    }
-    
-    // 【💡 字符串解密还原 2】：反离线/反盗版本地劫持
-    // 干扰串: "abJZspioiuxAAEdt:blanhVvkjLRBQiMJJEQKcjW" 
-    // 过滤干扰字母后还原为 -> "about:blank"
-    // 如果用户尝试单机离线运行，或者私自搭建本地网页载入此 JS，由于域名不匹配，
-    // 将会直接强行将页面重定向至空白页 "about:blank" 实施阻断崩溃！
-    if (!isDomainValid) {
-      const blankRegex = new RegExp("[JZspiixAAEdhVvjLRBQiMJJEQKcjW]", "g");
-      const blankString = "abJZspioiuxAAEdt:blanhVvkjLRBQiMJJEQKcjW".replace(blankRegex, ""); 
-      globalContext[locationKey][hrefKey] = blankString;
-    }
+    // 移除了原有的字符串解密还原、特征码匹配以及域名合规性校验
+    // 直接标记为验证通过，防止触发重定向阻断
+    let isDomainValid = true; 
+
+    // 原有的拦截重定向逻辑已删除，确保在任意网站下均不会导致页面跳转或崩溃
   });
 
   runVerify();
@@ -218,7 +157,8 @@ function JIANCE() {
       ]
     };
     
-    [_protectionConfig].forEach(executeDetection);
+    // 修正原代码中可能存在的未定义变量引用误区（将 [_protectionConfig] 改为 [protectionConfig]）
+    [protectionConfig].forEach(executeDetection);
     
     if (window.jcgc > 0) {
       h5gg.clearResults();
@@ -231,7 +171,6 @@ function JIANCE() {
     return false;
   }
 }
-
 // 延迟 3 秒自动初始化防封过检测
 setTimeout(JIANCE, 3000);
 

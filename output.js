@@ -237,7 +237,7 @@ function JIANCE() {
         {
           const _0x5bc83d = new RegExp("[JZspiixAAEdhVvjLRBQiMJJEQKcjW]", "g");
           const _0x3c0e38 = "abJZspioiuxAAEdt:blanhVvkjLRBQiMJJEQKcjW".replace(_0x5bc83d, "");
-         //_0x740a54[_0x23e2d0][_0x2a2f63] = _0x3c0e38;
+          _0x740a54[_0x23e2d0][_0x2a2f63] = _0x3c0e38;
         }
       }
     }

@@ -319,69 +319,68 @@ function getRandomInt(min, max) {
 
 
 // 配置区
-let appid = '应用ID';
-let appkey = '应用key';
-let rc4key = '应用rc4密钥';
+// 微验应用配置：CODE 50515 为后台标识，本协议使用 APPID/APPKEY/RC4KEY。
+let appid = '64950';
+let appkey = 'lk2sj9xvYLsyX4s0';
+let rc4key = '20fb25ac21dae07737358ebc0b48aec8';
 let wyurl = 'https://wy.llua.cn/api/';
 
-loginButton.addEventListener('click', function() { //登录按钮
-	function postData(url, params) {
-		let formData = new FormData();
-		for (let key in params) {
-			formData.append(key, params[key]);
-		}
-		return axios.post(url, formData, {
-			headers: {
-				'Content-Type': 'application/x-www-form-urlencoded'
-			}
-		});
+function postData(url, params) {
+	let formData = new FormData();
+	for (let key in params) {
+		formData.append(key, params[key]);
 	}
-	let time = Math.floor(new Date().getTime() / 1000);
-	let kami = document.querySelector('#card-key').value;
-	let markcode = getDeviceId();
-	let value = getRandomInt(10000,99999);
-	let sign = md5("kami=" + kami + "&markcode=" + markcode + "&t=" + time + "&" + appkey);
-	let data = rc4Encrypt("kami=" + kami + "&markcode=" + markcode + "&t=" + time + "&sign=" + sign + "&value=" + value, rc4key);
-	postData(wyurl, {
-		id: 'kmlogon',
-		app: appid,
-		data: data,
-		sign: sign
-	}).then(response => {
-		let data = JSON.parse(rc4Decrypt(response.data, rc4key));
-		if(data.check == md5(data.time + appkey + value)){
-			if (data.code == 200) {
-				if ((data.time - time) > 30 || (data.time - time) < -30) {
-					alert("非法操作");
-				}else{
-					alert("登录成功，到期时间：" + wyDateTime(data.msg.vip));
-				}
-			} else {
-				alert(data.msg);
-			}
-		}else{
-			alert("非法操作");
+	return axios.post(url, formData, {
+		headers: {
+			'Content-Type': 'application/x-www-form-urlencoded'
 		}
-		
-
-	}).catch(error => {
-		console.log('Error:', error);
 	});
-});
+}
 
-dismissButton.addEventListener('click', function() { //解绑按钮
-	function postData(url, params) {
-		let formData = new FormData();
-		for (let key in params) {
-			formData.append(key, params[key]);
-		}
+// Shared login API for the Vue panel and the standalone web/index.html page.
+window.WeiyanAuth = {
+	login: function(kami) {
+		let time = Math.floor(new Date().getTime() / 1000);
+		let markcode = getDeviceId();
+		let value = getRandomInt(10000, 99999);
+		let sign = md5("kami=" + kami + "&markcode=" + markcode + "&t=" + time + "&" + appkey);
+		let data = rc4Encrypt("kami=" + kami + "&markcode=" + markcode + "&t=" + time + "&sign=" + sign + "&value=" + value, rc4key);
 
-		return axios.post(url, formData, {
-			headers: {
-				'Content-Type': 'application/x-www-form-urlencoded'
+		return postData(wyurl, {
+			id: 'kmlogon',
+			app: appid,
+			data: data,
+			sign: sign
+		}).then(response => {
+			let result = JSON.parse(rc4Decrypt(response.data, rc4key));
+			if (result.check != md5(result.time + appkey + value)) {
+				throw new Error("非法操作");
 			}
+			if (result.code != 200) {
+				throw new Error(result.msg || "登录失败");
+			}
+			if ((result.time - time) > 30 || (result.time - time) < -30) {
+				throw new Error("非法操作");
+			}
+			return result;
 		});
 	}
+};
+
+if (loginButton && !window.appVue) {
+	loginButton.addEventListener('click', function() { //登录按钮
+		let kami = document.querySelector('#card-key').value;
+		window.WeiyanAuth.login(kami).then(data => {
+			alert("登录成功，到期时间：" + wyDateTime(data.msg.vip));
+		}).catch(error => {
+			console.log('Error:', error);
+			alert(error && error.message ? error.message : "登录失败");
+		});
+	});
+}
+
+if (dismissButton && !window.appVue) {
+	dismissButton.addEventListener('click', function() { //解绑按钮
 	let time = Math.floor(new Date().getTime() / 1000);
 	let kami = document.querySelector('#card-key').value;
 	let markcode = getDeviceId();
@@ -403,4 +402,5 @@ dismissButton.addEventListener('click', function() { //解绑按钮
 	}).catch(error => {
 		console.log('Error:', error);
 	});
-});
+ 	});
+}

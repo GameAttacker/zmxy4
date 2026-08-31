@@ -1,6 +1,3 @@
-//alert("欢迎使用波塞冬之眼\nQQ群聊：878952969");
-//setWindowDrag(0, 0, 377, 70);
-//setWindowRect(150, 40, 377, 300);
 window.Query  = true;
 // 创建公告弹窗函数
 function createAnnouncement() {
